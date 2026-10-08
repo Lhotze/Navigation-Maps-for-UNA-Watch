@@ -154,7 +154,7 @@ def build(pbf, region, bb):
         big = max(polys, key=lambda p: (p[0].max() - p[0].min()) * (p[1].max() - p[1].min()))
         munis.append({'name': t['name'], 'polys': polys, 'bbox': box, 'level': int(t['admin_level']),
                       'lat': float(big[1].mean()), 'lon': float(big[0].mean())})
-    # Cities that are a district of their own (for example independent cities) have no level 8 boundary:
+    # Cities that are a district of their own (Heidelberg, Karlsruhe, ...) have no level 8 boundary:
     # keep a level 6 area only if it contains no level 8 municipality.
     l8 = [m for m in munis if m['level'] == 8]
     keep = []
@@ -174,7 +174,7 @@ def build(pbf, region, bb):
     # --- 2. place nodes (for the "which part of town" label) ---------------------------
     place_rank = {'city': 5, 'town': 4, 'village': 3, 'suburb': 3, 'hamlet': 2, 'quarter': 2,
                   'neighbourhood': 1, 'borough': 3}
-    pl_lat, pl_lon, pl_name = [], [], []
+    pl_lat, pl_lon, pl_name, pl_type = [], [], [], []
     fp = osmium.FileProcessor(pbf, osmium.osm.NODE).with_filter(osmium.filter.KeyFilter('place'))
     for o in fp:
         if not o.is_node():
@@ -182,7 +182,7 @@ def build(pbf, region, bb):
         t = o.tags
         if t.get('place') in place_rank and t.get('name') and o.location.valid():
             if in_bbox(o.location.lat, o.location.lon, bb):
-                pl_lat.append(o.location.lat); pl_lon.append(o.location.lon); pl_name.append(t['name'])
+                pl_lat.append(o.location.lat); pl_lon.append(o.location.lon); pl_name.append(t['name']); pl_type.append(t['place'])
     pl_lat = np.array(pl_lat); pl_lon = np.array(pl_lon)
     print(f'place nodes: {len(pl_name)} ({time.time() - t0:.0f}s)', flush=True)
 
@@ -230,6 +230,48 @@ def build(pbf, region, bb):
             ins |= points_in_polygon(wlon[cand], wlat[cand], xs, ys)
         wmuni[cand[ins]] = mi
     print(f'streets placed in municipalities: {int(np.sum(wmuni >= 0))} ({time.time() - t0:.0f}s)', flush=True)
+
+    # 3b. Where the boundaries only give districts (admin_level 6 - the council areas of the UK, for
+    #     example) the towns and villages are place nodes: give each street of such a district to the
+    #     town or village it belongs to (nearest, a city reaching further than a village). Streets
+    #     near no place stay with the district.
+    radius = {'city': 12000.0, 'town': 5000.0, 'village': 2000.0}
+    pl_idx = [k for k in range(len(pl_name)) if pl_type[k] in radius]
+    if pl_idx and any(m['level'] == 6 for m in munis):
+        pidx = np.array(pl_idx)
+        plat_a, plon_a = pl_lat[pidx], pl_lon[pidx]
+        prad = np.array([radius[pl_type[k]] for k in pl_idx])
+        virtual = {}                                   # (district, place) -> index into munis
+        moved = 0
+        for mi in range(len(munis)):
+            m = munis[mi]
+            if m['level'] != 6:
+                continue
+            inside = np.zeros(len(pidx), dtype=bool)
+            for xs, ys in m['polys']:
+                inside |= points_in_polygon(plon_a, plat_a, xs, ys)
+            cands = np.nonzero(inside)[0]
+            if len(cands) == 0:
+                continue
+            ws = np.nonzero(wmuni == mi)[0]
+            for wi in ws:
+                dy = (plat_a[cands] - wlat[wi]) * 110574.0
+                dx = (plon_a[cands] - wlon[wi]) * 111320.0 * math.cos(math.radians(wlat[wi]))
+                d = np.hypot(dx, dy)
+                score = d / prad[cands]
+                score[d > prad[cands]] = np.inf
+                j = int(np.argmin(score))
+                if not np.isfinite(score[j]):
+                    continue
+                pk = pl_idx[int(cands[j])]
+                key = (mi, pk)
+                if key not in virtual:
+                    virtual[key] = len(munis)
+                    munis.append({'name': pl_name[pk], 'polys': [], 'bbox': m['bbox'], 'level': 0,
+                                  'lat': float(pl_lat[pk]), 'lon': float(pl_lon[pk])})
+                wmuni[wi] = virtual[key]
+                moved += 1
+        print(f'streets given to towns and villages: {moved} ({time.time() - t0:.0f}s)', flush=True)
 
     # nearest place node for the label
     def nearest_place(lat, lon):
@@ -323,6 +365,8 @@ def build(pbf, region, bb):
     place_rec, street_rec, number_rec = [], [], []
     for mi in mi_sorted:
         m = munis[mi]
+        if not by_muni.get(mi):
+            continue                         # a district whose streets all went to its towns
         lst = sorted(by_muni.get(mi, []), key=lambda ke: (ke[0][1], ke[0][2] or ''))
         first = len(street_rec)
         for key, e in lst:
