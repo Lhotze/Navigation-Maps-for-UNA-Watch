@@ -1,0 +1,11 @@
+.venv/
+venv/
+__pycache__/
+maps/
+*.osm.pbf
+*.pbf
+build_ch
+build_ch.exe
+build_ch.obj
+.DS_Store
+Thumbs.db
