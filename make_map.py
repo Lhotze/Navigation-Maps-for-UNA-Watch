@@ -8,7 +8,7 @@
 
 All .pbf files in the folder are merged into ONE map (overlaps are fine). Instead you can
 name sources explicitly: a local file, a URL, or a Geofabrik path
-    python make_map.py europe/germany/rheinland-pfalz europe/austria/vorarlberg
+    python make_map.py europe/united-kingdom/scotland europe/united-kingdom/wales
 
 See README.md for where to get extracts and what to expect.
 
@@ -73,7 +73,7 @@ def fetch(source, dl_dir):
         return os.path.abspath(source), name
     if re.match(r'^https?://', source):
         url = source
-    else:                                        # Geofabrik path like europe/germany/bremen
+    else:                                        # Geofabrik path like europe/united-kingdom/wales
         url = f'https://download.geofabrik.de/{source.strip("/")}-latest.osm.pbf'
     name = re.sub(r'(-latest)?\.osm\.pbf$|\.pbf$', '', os.path.basename(url))
     os.makedirs(dl_dir, exist_ok=True)
@@ -202,7 +202,7 @@ def dir_size(path):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('source', nargs='*',
-                    help='local .osm.pbf, URL or Geofabrik path (europe/germany/bremen); '
+                    help='local .osm.pbf, URL or Geofabrik path (europe/united-kingdom/wales); '
                          'none given: all .pbf files in the folder of this script (or --dir)')
     ap.add_argument('--dir', default=HERE, help='folder searched for .pbf files when no source is given')
     ap.add_argument('-o', '--out', default=os.path.join(HERE, 'maps'), help='output directory (default: ./maps)')

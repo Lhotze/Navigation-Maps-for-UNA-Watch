@@ -154,7 +154,7 @@ def build(pbf, region, bb):
         big = max(polys, key=lambda p: (p[0].max() - p[0].min()) * (p[1].max() - p[1].min()))
         munis.append({'name': t['name'], 'polys': polys, 'bbox': box, 'level': int(t['admin_level']),
                       'lat': float(big[1].mean()), 'lon': float(big[0].mean())})
-    # Cities that are a district of their own (Heidelberg, Karlsruhe, ...) have no level 8 boundary:
+    # Cities that are a district of their own (for example independent cities) have no level 8 boundary:
     # keep a level 6 area only if it contains no level 8 municipality.
     l8 = [m for m in munis if m['level'] == 8]
     keep = []

@@ -28,23 +28,24 @@ whichever fits. You can use files from both together.
 ### Option A: Geofabrik (countries and regions, ready-made)
 
 1. Open https://download.geofabrik.de and click your continent, then your country
-   (for example Europe > Germany).
-2. A country page lists its **sub-regions** (for Germany the federal states) in a table. Click a
-   sub-region, for example "Baden-Wuerttemberg". The table also shows the size of each file
-   in the `.osm.pbf` column.
+   (for example Europe > United Kingdom).
+2. A country page lists its **sub-regions** in a table (for the United Kingdom: England, Scotland,
+   Wales and Northern Ireland). Click a sub-region, for example "Scotland". The table also shows
+   the size of each file in the `.osm.pbf` column.
 3. On the sub-region page, download the file named `<region>-latest.osm.pbf` (the link in the
    section "Commonly Used Formats"). Example:
-   `https://download.geofabrik.de/europe/germany/baden-wuerttemberg-latest.osm.pbf`
+   `https://download.geofabrik.de/europe/united-kingdom/scotland-latest.osm.pbf`
 4. Put the file in the same folder as `make_map.py`.
 
 Shortcut: you can skip the manual download. Give `make_map.py` the part of the address between
 `download.geofabrik.de/` and `-latest.osm.pbf`, and it downloads the file for you:
 
-    python make_map.py europe/germany/baden-wuerttemberg
+    python make_map.py europe/united-kingdom/scotland
 
-Take **sub-regions, not whole countries**: all of Germany is 4.5 GB, far more than this tool can
-merge and the watch can hold. The dated files further down on the page (like
-`baden-wuerttemberg-260901.osm.pbf`) are older snapshots of the same data; you want the "latest" one.
+Take **sub-regions, not whole large countries**: a country's extract can be several GB (all of Great
+Britain is 2 GB), more than this tool can merge and the watch can hold. The dated files further down
+on the page (like `scotland-260901.osm.pbf`) are older snapshots of the same data; you want the
+"latest" one.
 
 ### Option B: BBBike (your own rectangle, also across borders)
 
@@ -60,14 +61,14 @@ the surroundings of one city.
    service says "Area too large", zoom in and make the rectangle smaller.
 6. Click the button to start the extract. When it is ready you get an email with a link; download the
    `.osm.pbf` file from it (the name contains your rectangle, for example
-   `planet_7.897,48.816_9.223,49.937.osm.pbf`).
+   `planet_-3.350,55.890_-3.050,55.990.osm.pbf`).
 7. Put the file in the same folder as `make_map.py`.
 
 ### Using several files
 
 Download as many files as you need and **put them all in the same folder as `make_map.py`**. The
-script merges them into one map, also across borders (for example Baden-Wuerttemberg plus
-Rheinland-Pfalz plus a BBBike rectangle around a city in Austria). Overlapping areas are fine;
+script merges them into one map, also across borders (for example Scotland plus the north of
+England, or two countries plus a BBBike rectangle around a city). Overlapping areas are fine;
 objects present in several files are kept once.
 
 Take only what covers where you will travel. The result is roughly 1.2 MB of map per 1 MB of
@@ -86,11 +87,11 @@ That is all. It writes `maps/map/`. Useful options:
 - `--bbox minlat,minlon,maxlat,maxlon` use only part of the data
 - `--dir <folder>` look for the `.pbf` files in another folder
 - Instead of putting files in the folder you can name sources:
-  `make_map.py europe/germany/bremen` (Geofabrik path, downloaded), a URL, or a file path.
+  `make_map.py europe/united-kingdom/wales` (Geofabrik path, downloaded), a URL, or a file path.
 - `--keep-work` keep intermediate files
 
-Measured on a 16-core PC, 15 GB RAM, with the Rheinland-Pfalz extract
-(271 MB `.pbf`): about 45 minutes, up to ~8 GB RAM, result 326 MB in 486 files.
+Measured on a 16-core PC with 15 GB RAM, with a 270 MB `.pbf`: about 45 minutes, up to ~8 GB RAM,
+result about 330 MB.
 The slow parts are the two hierarchies (bicycle ~10 min, foot ~40 min) and the house-number matching (~40 min).
 Time and RAM grow with the size of the input; a city or district takes a few minutes.
 Merging two neighbouring regions (425 MB together) took 30 s.
