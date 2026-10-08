@@ -5,7 +5,7 @@ own compact map format (map tiles, forest/water/built-up areas, routing for bicy
 an address index). You make it yourself, once per region, from free OpenStreetMap data, and copy it
 to the watch over USB. Nothing has to be hosted by anyone.
 
-This repository holds only these tools, not the app. The maps are made for Offline Navigation 0.9.0 or newer.
+This repository holds only these tools, not the app. The maps are made for Offline Navigation 1.0.0 or newer.
 
 Platforms: developed and tested on Linux. The code avoids Linux-only features and handles Windows
 (MinGW or Visual Studio compiler) and macOS (Xcode command line tools), but those two are untested.
